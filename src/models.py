@@ -1,15 +1,19 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.types import Date
-from .db import Base
+from src.db import db
+from datetime import datetime
 
-class Player(Base):
-    __tablename__ = "Players"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(80), unique=True, nullable=False)
-
-    def __init__(self, username=None):
-            self.username = username
+class Player(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(20), unique=True, nullable=False)
+    game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
 
     def __repr__(self):
-        return '<User {}>'.format(self.username)
+        return '<User {} [{}]>'.format(self.username, self.id)
+
+class Game(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    players = db.relationship('Player', backref='game', lazy=True)
+
+    def __repr__(self):
+        return '<Game {} created at {}; Players: {}>'.format(self.id, self.created, len(self.players))
+
