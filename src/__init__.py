@@ -3,6 +3,7 @@ import os
 from flask import Flask
 from src.db import init_db
 from src.models import Player
+from src.views import index
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -24,5 +25,6 @@ def create_app(test_config=None):
     init_db(app)
 
     # register blueprints
+    app.register_blueprint(index.bp)
 
     return app
