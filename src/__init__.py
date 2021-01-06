@@ -1,9 +1,9 @@
 import os
 
-from flask import Flask
+from flask import Flask, jsonify
 from src.db import init_db
 from src.models import Player
-from src.views import index
+from src.views import common, games, player
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -24,7 +24,14 @@ def create_app(test_config=None):
 
     init_db(app)
 
+    app.register_error_handler(404, resource_not_found)
+
     # register blueprints
-    app.register_blueprint(index.bp)
+    app.register_blueprint(common.bp)
+    app.register_blueprint(games.bp)
+    app.register_blueprint(player.bp)
 
     return app
+
+def resource_not_found(e):
+    return jsonify(error=str(e)), 404
