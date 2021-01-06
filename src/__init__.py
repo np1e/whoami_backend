@@ -1,17 +1,17 @@
 import os
 
-from flask import Flask
+from flask import Flask, jsonify
+from src.db import init_db
+from src.models import Player
+from src.views import common, games, player
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
-    app.config.from_mapping(
-        SECRET_KEY='dev',
-        DATABASE=os.path.join(app.instance_path, 'whoami.sqlite')
-    )
 
     if test_config is None:
         # load the instance config, if it exists, when not testing
-        app.config.from_pyfile('config.py', silent=True)
+        app.config.from_object('config')
+        app.config.from_pyfile('config.py')
     else:
         # load the test config if passed in
         app.config.from_mapping(test_config)
@@ -22,9 +22,16 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # a simple page that says hello
-    @app.route('/hello')
-    def hello():
-        return 'Hello, World!'
+    init_db(app)
+
+    app.register_error_handler(404, resource_not_found)
+
+    # register blueprints
+    app.register_blueprint(common.bp)
+    app.register_blueprint(games.bp)
+    app.register_blueprint(player.bp)
 
     return app
+
+def resource_not_found(e):
+    return jsonify(error=str(e)), 404
