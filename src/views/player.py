@@ -1,7 +1,9 @@
 from flask import Blueprint, request, session, jsonify, abort
+from flask import current_app as app
 from werkzeug.security import generate_password_hash
 from src.db import get_db
 from src.models import Player
+from src.views.common import get_player_by_id
 import requests
 
 bp = Blueprint("players", __name__, url_prefix="/player")
@@ -28,4 +30,12 @@ def create_player():
     db.add(player)
     db.commit()
 
+    print(player)
     return jsonify(player.serialize()), 201
+
+@bp.route('/<int:player_id>', methods = ["GET"])
+def get_player(player_id):
+
+    player = get_player_by_id(player_id)
+
+    return jsonify(player.serialize())
