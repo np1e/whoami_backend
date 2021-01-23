@@ -1,18 +1,78 @@
 import os
 
 from flask import Flask, jsonify
+from src.admin import init_admin
 from flask_cors import CORS
-from src.db import init_db
-from src.views import common, games, player
-from src.socket_server import init_socket_server, sio
+from flask_jwt_extended import JWTManager
+from src.db import init_db, get_db
+from src.model.models import Collection, Character, Tag
+from src.model.models import tags as tags_table
+from src.routes import controller
+from src.socket_server import init_socket_server
+from flask_migrate.cli import db as db_cli
+from flask import current_app
+from flask.cli import with_appcontext
+import click
+import json
 
-def resource_not_found(e):
-    return jsonify(error=str(e)), 404
+@click.group()
+def info():
+    """
+    Show informations.
+    """
+    pass
+
+@info.command()
+@with_appcontext
+def seed():
+    print("Seeding database...")
+
+    db = get_db()
+    tags_table.delete()
+
+    tags = json.loads(open('data/tags.json').read())
+    Tag.query.delete()
+    for tag in tags:
+        tag_model = Tag()
+        tag_model.name = tag['name']
+        db.add(tag_model)
+        db.commit()
+
+    collections = json.loads(open('data/collections.json').read())
+    Collection.query.delete()
+    db.commit()
+    for collection in collections:
+        collection_model = Collection()
+        collection_model.name = collection['name']
+        collection_model.default = collection['default']
+        collection_model.tags = [Tag.query.filter_by(name=name).first() for name in collection['tags']]
+        db.add(collection_model)
+        db.commit()
+
+    characters_file = json.loads(open('data/characters.json').read())
+    Character.query.delete()
+    for character in characters_file:
+        character_model = Character()
+        character_model.name = character['name']
+        character_model.collection_id = Collection.query.filter_by(name=character['collection_name']).first().id
+        db.add(character_model)
+        db.commit()
+
+
+@info.command()
+@with_appcontext
+def config():
+    """
+    Show current app configuration.
+    """
+    for k, v in current_app.config.items():
+        print("%s: %s" % (k, v))
 
 def create_app(test_config = None):
 
     app = Flask(__name__, instance_relative_config=True)
     CORS(app, origins="http://localhost:8080")
+    CORS(controller.bp)
 
     if test_config:
         app.config.from_object(test_config)
@@ -28,12 +88,13 @@ def create_app(test_config = None):
 
     init_db(app)
     init_socket_server(app)
+    init_admin(app)
+    
+    app.cli.add_command(info)
 
-    app.register_error_handler(404, resource_not_found)
+    jwt = JWTManager(app)
 
     # register blueprints
-    app.register_blueprint(common.bp)
-    app.register_blueprint(games.bp)
-    app.register_blueprint(player.bp)
+    app.register_blueprint(controller.bp)
 
     return app
