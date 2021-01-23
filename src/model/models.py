@@ -4,6 +4,7 @@ from datetime import datetime
 import string
 import random
 import uuid
+from flask_login import UserMixin
 
 KEY_LENGTH = 16
 UUID_LENGTH = 36
@@ -16,6 +17,15 @@ def generate_key():
 
 def generate_uuid():
     return str(uuid.uuid4())
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(18), nullable=False, unique=True)
+    password_hash = db.Column(db.String(64))
+
+    # Required for administrative interface
+    def __unicode__(self):
+        return self.username
 
 class Player(db.Model, Serializer):
     _id = db.Column(db.String(36), primary_key=True, default=generate_uuid, unique=True)

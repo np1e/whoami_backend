@@ -5,13 +5,14 @@ from src.admin import init_admin
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from src.db import init_db, get_db
-from src.model.models import Collection, Character, Tag
+from src.model.models import Collection, Character, Tag, User
 from src.model.models import tags as tags_table
 from src.routes import controller
 from src.socket_server import init_socket_server
 from flask_migrate.cli import db as db_cli
 from flask import current_app
 from flask.cli import with_appcontext
+from werkzeug.security import generate_password_hash
 import click
 import json
 
@@ -58,6 +59,15 @@ def seed():
         db.add(character_model)
         db.commit()
 
+@info.command()
+@with_appcontext
+def seed_admin():
+    db = get_db()
+    user = User()
+    user.username = 'admin'
+    user.password_hash = generate_password_hash(current_app.config['ADMIN_PASSWORD'])
+    db.add(user)
+    db.commit()
 
 @info.command()
 @with_appcontext
