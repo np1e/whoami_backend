@@ -83,10 +83,12 @@ class Collection(db.Model, Serializer):
 
     def serialize(self):
         d = Serializer.serialize(self)
-        d['amountOfCharacter'] = len(self.characters)
+        d['amountOfCharacters'] = len(self.characters)
+
+        return d
 
     def __repr__(self):
-        return '{}'.format(self.name, self.id)
+        return '{}'.format(self.name)
 
 class Tag(db.Model, Serializer):
     name = db.Column(db.String(20), unique=True, primary_key=True, nullable=False)
