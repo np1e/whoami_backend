@@ -84,10 +84,17 @@ def join_game():
         abort(400, description=errors)
 
     game = game_service.get_game(key)
+
+    if not game:
+        abort(404, description="Game not found")
+
     token = _create_player(username, game)
 
-    return jsonify(token), 200
+    return jsonify(token=token), 200
 
 def _create_player(username, game, isCreator = False):
-    player = create_player(username, game, isCreator)
-    return generate_token(player._id)
+    if len(game.players) < game.max_players:
+        player = create_player(username, game, isCreator)
+        return generate_token(player._id)
+    
+    abort(403, description=build_error("Maximum number of players reached."))
