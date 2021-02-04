@@ -1,6 +1,7 @@
 from sqlalchemy.inspection import inspect
 from src.db import db
 from datetime import datetime, date
+from enum import Enum
 
 class Serializer(object):
     def serialize(self, exclude = []):
@@ -20,6 +21,11 @@ class Serializer(object):
                 continue
                 
             if isinstance(obj, list):
+                continue
+
+            if isinstance(obj, Enum):
+                print(obj)
+                d[c] = obj.name
                 continue
             
             d[c] = obj
