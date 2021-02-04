@@ -3,7 +3,6 @@ from flask_admin import AdminIndexView, expose, helpers
 import flask_login as login
 from flask import request, url_for, redirect
 from src.model.models import User
-from src.db import get_db
 from werkzeug.security import check_password_hash
 from wtforms import form, fields, validators
 
@@ -68,6 +67,10 @@ class AppModelView(ModelView):
 class UserModelView(AppModelView):
     can_delete = False
     column_exclude_list = ['password_hash', ]
+
+class GameModelView(AppModelView):
+    column_hide_backrefs = False
+    column_list = ['current_player', 'id', 'state', 'players', 'max_players', 'used_collections', 'nextVotes', 'correctGuessVotes', 'wrongGuessVotes']
 
 class CharacterModelView(AppModelView):
     can_delete = True

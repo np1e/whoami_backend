@@ -1,8 +1,8 @@
 from flask_admin import Admin
 from flask_login import LoginManager
 from flask_admin.contrib.sqla import ModelView
-from src.model.models import Character, Collection, Tag, Game, Player, User
-from src.admin.model_view import AppModelView, CharacterModelView, TagModelView, UserModelView, AppAdminIndexView
+from src.model.models import Character, Collection, Tag, Game, Player, User, Image
+from src.admin.model_view import AppModelView, CharacterModelView, TagModelView, UserModelView, AppAdminIndexView, GameModelView
 from src.db import db
 
 admin = Admin(template_mode="bootstrap3", index_view=AppAdminIndexView(), base_template="admin/admin_master.html")
@@ -19,6 +19,7 @@ def init_admin(app):
     admin.add_view(CharacterModelView(Character, db.session))
     admin.add_view(AppModelView(Collection, db.session))
     admin.add_view(TagModelView(Tag, db.session))
-    admin.add_view(AppModelView(Game, db.session))
+    admin.add_view(GameModelView(Game, db.session))
     admin.add_view(AppModelView(Player, db.session))
     admin.add_view(UserModelView(User, db.session))
+    admin.add_view(AppModelView(Image, db.session))
