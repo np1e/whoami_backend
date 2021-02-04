@@ -1,8 +1,6 @@
-from flask import jsonify
-
 def build_error(message, details = {}, **kwargs):
 
-    error = {"error": error}
+    error = {"error": message}
 
     if details:
         error["details"] = details
@@ -10,7 +8,7 @@ def build_error(message, details = {}, **kwargs):
     if len(kwargs):
         error["details"] = {}
 
-    for key, value in kwargs:
+    for key, value in kwargs.items():
         error['details'][key] = value
 
     return error
