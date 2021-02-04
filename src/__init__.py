@@ -3,13 +3,11 @@ import os
 from flask import Flask, jsonify
 from src.admin import init_admin
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
 from src.db import init_db, get_db
 from src.model.models import Collection, Character, Tag, User
 from src.model.models import tags as tags_table
 from src.routes import controller
 from src.socket_server import init_socket_server
-from flask_migrate.cli import db as db_cli
 from flask import current_app
 from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
@@ -80,8 +78,10 @@ def config():
 
 def create_app(test_config = None):
 
+    print("Starting app...")
+
     app = Flask(__name__, instance_relative_config=True)
-    CORS(app, origins="http://localhost:8080")
+    CORS(app)
     CORS(controller.bp)
 
     if test_config:
@@ -101,8 +101,6 @@ def create_app(test_config = None):
     init_admin(app)
     
     app.cli.add_command(info)
-
-    jwt = JWTManager(app)
 
     # register blueprints
     app.register_blueprint(controller.bp)
