@@ -3,8 +3,8 @@ import os
 from flask import Flask, jsonify
 from src.admin import init_admin
 from flask_cors import CORS
-from src.db import init_db, get_db
-from src.model.models import Collection, Character, Tag, User
+from src.db import init_db, get_db, create_tables
+from src.model.models import Collection, Character, Tag, User, Image
 from src.model.models import tags as tags_table
 from src.routes import controller
 from src.socket_server import init_socket_server
@@ -14,12 +14,18 @@ from werkzeug.security import generate_password_hash
 import click
 import json
 
+
 @click.group()
 def info():
     """
     Show informations.
     """
     pass
+
+@info.command()
+@with_appcontext
+def create():
+    create_tables()
 
 @info.command()
 @with_appcontext
@@ -54,18 +60,28 @@ def seed():
         character_model = Character()
         character_model.name = character['name']
         character_model.collection_id = Collection.query.filter_by(name=character['collection_name']).first().id
+        if 'image' in character:
+            image = Image(image_url=character['image']['url'], license=character['image']['license'],
+                          creator=character['image']['creator'])
+            character_model.image = image
+            db.add(image)
         db.add(character_model)
         db.commit()
+
+    seed_admin()
+
 
 @info.command()
 @with_appcontext
 def seed_admin():
+    print("add admin user")
     db = get_db()
     user = User()
     user.username = 'admin'
     user.password_hash = generate_password_hash(current_app.config['ADMIN_PASSWORD'])
     db.add(user)
     db.commit()
+
 
 @info.command()
 @with_appcontext
@@ -76,8 +92,8 @@ def config():
     for k, v in current_app.config.items():
         print("%s: %s" % (k, v))
 
-def create_app(test_config = None):
 
+def create_app(test_config=None):
     print("Starting app...")
 
     app = Flask(__name__, instance_relative_config=True)
@@ -99,7 +115,7 @@ def create_app(test_config = None):
     init_db(app)
     init_socket_server(app)
     init_admin(app)
-    
+
     app.cli.add_command(info)
 
     # register blueprints

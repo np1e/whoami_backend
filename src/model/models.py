@@ -31,7 +31,7 @@ class User(db.Model, UserMixin):
 class Player(db.Model, Serializer):
     _id = db.Column(db.String(36), primary_key=True, default=generate_uuid, unique=True)
     username = db.Column(db.String(20), nullable=False)
-    game_id = db.Column(db.Integer, db.ForeignKey('game.id'))
+    game_id = db.Column(db.String(36), db.ForeignKey('game.id'))
     connected = db.Column(db.Boolean, default = False)
     ready = db.Column(db.Boolean, default = False)
     sid = db.Column(db.String())
@@ -39,7 +39,7 @@ class Player(db.Model, Serializer):
     character_id = db.Column(db.Integer, db.ForeignKey('character.id'))
     character = db.relationship('Character', backref="assigned_players")
     guesses = db.Column(db.Integer, default=0)
-    guessed = db.Column(db.Boolean, default = False)
+    guessed = db.Column(db.Boolean, default=False)
 
     def serialize(self):
         d = Serializer.serialize(self, exclude = ['game', 'sid'])
@@ -51,11 +51,28 @@ class Player(db.Model, Serializer):
 class GameState(enum.Enum):
     WAITING = 1
     RUNNING = 2
+    FINISHED = 3
+
 
 used_collections = db.Table('used_collections',
     db.Column('game_id',db.String(36), db.ForeignKey('game.id'), primary_key=True),
     db.Column('collection_id',db.Integer, db.ForeignKey('collection.id'), primary_key=True)
 )
+
+votes = db.Table('votes',
+     db.Column('game_id', db.String(36), db.ForeignKey('game.id'), primary_key=True),
+     db.Column('vote_id', db.Integer, db.ForeignKey('vote.id'), primary_key=True))
+
+
+class Vote(db.Model, Serializer):
+    id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    result = db.Column(db.Boolean, default=False)
+    game_id = db.Column(db.String(36), db.ForeignKey('game.id'))
+    player_id = db.Column(db.String(36), db.ForeignKey('player._id'))
+    player = db.relationship('Player', uselist=False, foreign_keys=[player_id], post_update=True)
+
+    def __repr__(self):
+        return "<Vote {}: {}; game {}>".format(self.id, self.result, self.game_id)
 
 class Game(db.Model, Serializer):
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid, unique=True)
@@ -66,17 +83,31 @@ class Game(db.Model, Serializer):
     max_players = db.Column(db.Integer)
     current_player_id = db.Column(db.String(36), db.ForeignKey('player._id'))
     current_player = db.relationship('Player', uselist=False, foreign_keys=[current_player_id], post_update=True)
-    nextVotes = db.Column(db.Integer, default = 0)
-    correctGuessVotes = db.Column(db.Integer, default = 0)
-    wrongGuessVotes = db.Column(db.Integer, default = 0)
+    nextVotes = db.relationship('Vote', cascade="all, delete", foreign_keys=[Vote.game_id])
+    guessVotes = db.relationship('Vote', cascade="all, delete", foreign_keys=[Vote.game_id])
+    awaitingGuessVote = db.Column(db.Boolean, default=False)
     used_collections = db.relationship('Collection', secondary=used_collections)
 
     def get_connected_players(self):
         return [player for player in self.players if player.connected]
 
+    def get_guessing_players(self):
+        return [player for player in self.players if not player.guessed]
+
+    def get_next_votes(self):
+        return [vote for vote in self.nextVotes if vote.result]
+
+    def get_correct_guess_votes(self):
+        return [vote for vote in self.guessVotes if vote.result]
+
+    def get_wrong_guess_votes(self):
+        return [vote for vote in self.guessVotes if not vote.result]
+
     def serialize(self):
         d = Serializer.serialize(self)
         d['players'] = [ {'player': player.serialize(), '_id': player._id } for player in self.players]
+        d['correctGuessVotes'] = len(self.get_correct_guess_votes())
+        d['wrongGuessVotes'] = len(self.get_wrong_guess_votes())
         return d
 
     def __repr__(self):
@@ -108,7 +139,7 @@ tags = db.Table('tags',
 )
 
 class Collection(db.Model, Serializer):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True, default=generate_uuid)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(30), unique=True, nullable=False)
     characters = db.relationship('Character', backref='collection', lazy=True)
     tags = db.relationship('Tag', secondary=tags, lazy='subquery', backref=db.backref('collections', lazy=True))

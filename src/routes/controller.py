@@ -9,6 +9,7 @@ from src.service.collection_service import get_all_collections
 from src.util.jwt_util import generate_token
 from src.util.serialize import Serializer
 from src.routes.error import build_error
+import json
 
 bp = Blueprint("api", __name__)
 
@@ -17,7 +18,7 @@ def handle_http_exception(e):
     """Return JSON instead of HTML for HTTP errors."""
     # start with the correct headers and status code from the error
     response = e.get_response()
-    app.logger.error(errors)
+    app.logger.error(e)
     # replace the body with JSON
     response.data = json.dumps({
         "code": e.code,

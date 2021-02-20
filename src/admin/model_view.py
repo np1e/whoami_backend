@@ -5,6 +5,7 @@ from flask import request, url_for, redirect
 from src.model.models import User
 from werkzeug.security import check_password_hash
 from wtforms import form, fields, validators
+from src.model.models import Image
 
 class LoginForm(form.Form):
     username = fields.StringField(validators=[validators.required()])
@@ -70,11 +71,14 @@ class UserModelView(AppModelView):
 
 class GameModelView(AppModelView):
     column_hide_backrefs = False
-    column_list = ['current_player', 'id', 'state', 'players', 'max_players', 'used_collections', 'nextVotes', 'correctGuessVotes', 'wrongGuessVotes']
+    column_list = ['current_player', 'id', 'state', 'players', 'max_players', 'used_collections', 'nextVotes',
+                   'guessVotes']
 
 class CharacterModelView(AppModelView):
     can_delete = True
     can_view_details = True
+    create_modal = True
+    edit_modal = True
     column_searchable_list = ['name']
     column_filters = ['name', 'collection']
 
