@@ -60,7 +60,7 @@ def create_game():
         errors["collections"] = "No collections given"
 
     if errors:
-        abort(400, description=build_error("Something went wrong.", details=errors))
+        abort(400, description=build_error("Something went wrong.", "SRV02", details=errors))
 
     game = game_service.create_game(max_players, collections)
     token = _create_player(username, game, isCreator = True)

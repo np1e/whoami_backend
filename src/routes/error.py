@@ -1,6 +1,7 @@
-def build_error(message, details = {}, **kwargs):
+def build_error(message, code = "SRV01", details = {}, **kwargs):
 
-    error = {"error": message}
+    error = {"error": message,
+             "code": code}
 
     if details:
         error["details"] = details
