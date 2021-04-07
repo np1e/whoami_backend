@@ -104,7 +104,7 @@ def create_app(test_config=None):
         app.config.from_object(test_config)
     else:
         app.config.from_object('config')
-        app.config.from_pyfile('config.py')
+        app.config.from_pyfile('config.py', silent=True)
 
     # ensure the instance folder exists
     try:
