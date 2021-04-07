@@ -7,5 +7,10 @@ setup(
     packages=['src'],
     include_package_data=True,
     zip_safe=False,
-    install_requires=['Flask']
+    install_requires=['Flask'],
+    entry_points={
+        'flask.commands': [
+            'info=src.commands:info',
+        ]
+    }
 )
