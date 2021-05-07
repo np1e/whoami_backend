@@ -22,7 +22,7 @@ def generate_uuid():
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(18), nullable=False, unique=True)
-    password_hash = db.Column(db.String(64))
+    password_hash = db.Column(db.String(94))
 
     # Required for administrative interface
     def __unicode__(self):
@@ -31,12 +31,12 @@ class User(db.Model, UserMixin):
 class Player(db.Model, Serializer):
     _id = db.Column(db.String(36), primary_key=True, default=generate_uuid, unique=True)
     username = db.Column(db.String(20), nullable=False)
-    game_id = db.Column(db.String(36), db.ForeignKey('game.id'))
+    game_id = db.Column(db.String(36), db.ForeignKey('game.id', name='game_id_player'))
     connected = db.Column(db.Boolean, default = False)
     ready = db.Column(db.Boolean, default = False)
     sid = db.Column(db.String())
     is_creator = db.Column(db.Boolean)
-    character_id = db.Column(db.Integer, db.ForeignKey('character.id'))
+    character_id = db.Column(db.Integer, db.ForeignKey('character.id', name='character_id_player'))
     character = db.relationship('Character', backref="assigned_players")
     guesses = db.Column(db.Integer, default=0)
     guessed = db.Column(db.Boolean, default=False)
@@ -55,20 +55,20 @@ class GameState(enum.Enum):
 
 
 used_collections = db.Table('used_collections',
-    db.Column('game_id',db.String(36), db.ForeignKey('game.id'), primary_key=True),
-    db.Column('collection_id',db.Integer, db.ForeignKey('collection.id'), primary_key=True)
+    db.Column('game_id',db.String(36), db.ForeignKey('game.id', name='game_id_used_collection'), primary_key=True),
+    db.Column('collection_id',db.Integer, db.ForeignKey('collection.id', name='collection_id_used_collections'), primary_key=True)
 )
 
 votes = db.Table('votes',
-     db.Column('game_id', db.String(36), db.ForeignKey('game.id'), primary_key=True),
-     db.Column('vote_id', db.Integer, db.ForeignKey('vote.id'), primary_key=True))
+     db.Column('game_id', db.String(36), db.ForeignKey('game.id', name='game_id_votes'), primary_key=True),
+     db.Column('vote_id', db.Integer, db.ForeignKey('vote.id', name='vote_id_votes'), primary_key=True))
 
 
 class Vote(db.Model, Serializer):
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     result = db.Column(db.Boolean, default=False)
-    game_id = db.Column(db.String(36), db.ForeignKey('game.id'))
-    player_id = db.Column(db.String(36), db.ForeignKey('player._id'))
+    game_id = db.Column(db.String(36), db.ForeignKey('game.id', name='game_id_vote'))
+    player_id = db.Column(db.String(36), db.ForeignKey('player._id', name='player_id_vote'))
     player = db.relationship('Player', uselist=False, foreign_keys=[player_id], post_update=True)
 
     def __repr__(self):
@@ -81,7 +81,7 @@ class Game(db.Model, Serializer):
     state = db.Column(db.Enum(GameState), default=GameState.WAITING)
     players = db.relationship('Player', backref='game', lazy=True, cascade="all, delete", foreign_keys=[Player.game_id])
     max_players = db.Column(db.Integer)
-    current_player_id = db.Column(db.String(36), db.ForeignKey('player._id'))
+    current_player_id = db.Column(db.String(36), db.ForeignKey('player._id', name='current_player_id'))
     current_player = db.relationship('Player', uselist=False, foreign_keys=[current_player_id], post_update=True)
     nextVotes = db.relationship('Vote', cascade="all, delete", foreign_keys=[Vote.game_id])
     guessVotes = db.relationship('Vote', cascade="all, delete", foreign_keys=[Vote.game_id])
@@ -117,8 +117,8 @@ class Game(db.Model, Serializer):
 class Character(db.Model, Serializer):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(80), unique=True, nullable=False)
-    collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'))
-    image_id = db.Column(db.String(36), db.ForeignKey('image.id'))
+    collection_id = db.Column(db.Integer, db.ForeignKey('collection.id', name='collection_id_character'))
+    image_id = db.Column(db.String(36), db.ForeignKey('image.id', name='image_id_character'))
     image = db.relationship('Image', uselist=False, foreign_keys=[image_id])
 
     def __repr__(self):
@@ -134,8 +134,8 @@ class Image(db.Model, Serializer):
         return self.image_url.split("/")[-1]
 
 tags = db.Table('tags',
-    db.Column('tag_name', db.String(20), db.ForeignKey('tag.name'), primary_key=True),
-    db.Column('collection_id', db.Integer, db.ForeignKey('collection.id'), primary_key=True)    
+    db.Column('tag_name', db.String(20), db.ForeignKey('tag.name', name='tag_name_tags'), primary_key=True),
+    db.Column('collection_id', db.Integer, db.ForeignKey('collection.id', name='collection_id_tags'), primary_key=True)    
 )
 
 class Collection(db.Model, Serializer):
